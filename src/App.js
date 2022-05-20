@@ -7,37 +7,40 @@ import * as BooksAPI from './BooksAPI';
 
 function App() {
   const navigate = useNavigate();
-  const [data, setData] = useState([])
-  useEffect(() => {
-    const getData = async () => {
-      const res = await BooksAPI.getAll();
-      setData(res)
+  const [data, setData] = useState([]);
+  const [shelves, setShelves] = useState({});
+  const shelvesInfo = [
+    {
+      shelfName: "currentlyReading",
+      shelfDisplayName: "Currently Reading"
+    },
+    {
+      shelfName: "wantToRead",
+      shelfDisplayName: "Want To Read"
+    },
+    {
+      shelfName: "read",
+      shelfDisplayName: "Read"
+    }, {
+      shelfName: "none",
+      shelfDisplayName: "None"
     }
+  ]
+  const getData = async () => {
+    await BooksAPI.getAll().then(res => setData(res));
+  }
+  useEffect(() => {
     getData();
   }, []);
-  const updateShelf = e => {
-    const updateData = async () => {
-      const id = { id: e.target.id }
-      await BooksAPI.update(id, e.target.value);
-      const getData = async () => {
-        const res = await BooksAPI.getAll();
-        setData(res)
-      }
-      getData();
-    }
-    updateData();
+  const updateShelf = async e => {
+    const id = { id: e.target.id }
+    await BooksAPI.update(id, e.target.value).then(res => setShelves(res));
+    getData();
   }
-  const addBook = e => {
-    const updateData = async () => {
-      const id = { id: e.target.id }
-      await BooksAPI.update(id, e.target.value);
-      const getData = async () => {
-        const res = await BooksAPI.getAll();
-        setData(res)
-      }
-      getData();
-    }
-    updateData();
+  const addBook = async e => {
+    const id = { id: e.target.id }
+    await BooksAPI.update(id, e.target.value).then(res => setShelves(res));
+    getData();
     navigate("/")
   }
   return (
@@ -50,9 +53,9 @@ function App() {
             </div>
             <div className="list-books-content">
               <div>
-                <Books data={data} setData={setData} shelf={"currentlyReading"} updateShelf={updateShelf} />
-                <Books data={data} setData={setData} shelf={"wantToRead"} updateShelf={updateShelf} />
-                <Books data={data} setData={setData} shelf={"read"} updateShelf={updateShelf} />
+                <Books shelvesInfo={shelvesInfo} data={data} shelf={"currentlyReading"} updateShelf={updateShelf} />
+                <Books shelvesInfo={shelvesInfo} data={data} shelf={"wantToRead"} updateShelf={updateShelf} />
+                <Books shelvesInfo={shelvesInfo} data={data} shelf={"read"} updateShelf={updateShelf} />
               </div>
             </div>
             <div className="open-search">
@@ -61,7 +64,7 @@ function App() {
           </div>
         } />
         <Route path="/search" element={
-          <Search setData={setData} addBook={addBook} />
+          <Search shelvesInfo={shelvesInfo} data={data} addBook={addBook} shelves={shelves} />
         } />
       </Routes>
     </div>
