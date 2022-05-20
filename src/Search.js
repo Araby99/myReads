@@ -2,23 +2,55 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import * as BooksAPI from './BooksAPI';
 
-const Search = ({ addBook }) => {
+const Search = ({ data, addBook, shelves, shelvesInfo }) => {
     const [searchInput, setSearchInput] = useState("");
     const [allBooks, setAllBooks] = useState([]);
-    const getAllBooks = async (query) => {
-        const res = await BooksAPI.search(query);
-        if (res.error) {
-            setAllBooks([]);
-        } else {
-            setAllBooks(res);
+    const [error, setError] = useState(false);
+    if (shelves.length === undefined) {
+        var firstState = {
+            currentlyReading: [],
+            read: [],
+            wantToRead: []
         }
+        data.map(book => {
+            if (book.shelf === "currentlyReading") {
+                firstState.currentlyReading.unshift(book.id)
+            } else if (book.shelf === "read") {
+                firstState.read.unshift(book.id)
+            } else if (book.shelf === "wantToRead") {
+                firstState.wantToRead.unshift(book.id)
+            }
+            return firstState;
+        })
+    }
+    const getAllBooks = async (query) => {
+        await BooksAPI.search(query).then((res) => {
+            if (res.error) {
+                setAllBooks([]);
+                setError(true);
+            } else {
+                setAllBooks(res);
+                setError(false);
+                console.log(allBooks);
+            }
+        });
     }
     const handleChange = e => {
         setSearchInput(e.target.value)
-        if (e.target.value.trim() !== "") {
-            getAllBooks(e.target.value)
+        e.target.value.trim() !== "" && getAllBooks(e.target.value)
+    }
+    const checkShelf = book => {
+        if ((shelves.length === undefined ? firstState : shelves).currentlyReading.includes(book.id)) {
+            return "currentlyReading";
+        } else if ((shelves.length === undefined ? firstState : shelves).read.includes(book.id)) {
+            return "read";
+        } else if ((shelves.length === undefined ? firstState : shelves).wantToRead.includes(book.id)) {
+            return "wantToRead";
+        } else {
+            return "none";
         }
     }
+
     return (
         <div className="search-books">
             <div className="search-books-bar">
@@ -45,29 +77,35 @@ const Search = ({ addBook }) => {
                                                 width: 128,
                                                 height: 192,
                                                 backgroundImage:
-                                                    `url(${book.imageLinks.thumbnail})`,
+                                                    `url(${book.imageLinks && book.imageLinks.thumbnail})`,
                                             }}
                                         ></div>
                                         <div className="book-shelf-changer">
-                                            <select onChange={addBook} id={book.id} defaultValue="none">
-                                                <option value="none" disabled>
-                                                    Move to...
+                                            <select onChange={addBook} id={book.id} defaultValue={checkShelf(book)}>
+                                                <option disabled>
+                                                    Add to...
                                                 </option>
-                                                <option value="currentlyReading">
-                                                    Currently Reading
-                                                </option>
-                                                <option value="wantToRead">Want to Read</option>
-                                                <option value="read">Read</option>
+                                                {
+                                                    shelvesInfo.map((shelf, index) => (
+                                                        <option key={index} value={shelf.shelfName}>{shelf.shelfDisplayName}</option>
+                                                    ))
+                                                }
                                             </select>
                                         </div>
                                     </div>
                                     <div className="book-title">{book.title}</div>
-                                    <div className="book-authors">{book.authors}</div>
+                                    <div className="book-authors">{book.authors && book.authors.join(", ")}</div>
                                 </div>
                             </li>
-                        ))
+                        )
+                        )
                     }
                 </ol>
+                {error && (
+                    <div className="error-message">
+                        <p>Sorry.. No Results Found</p>
+                    </div>
+                )}
             </div>
         </div >
     )
