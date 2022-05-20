@@ -31,7 +31,6 @@ const Search = ({ data, addBook, shelves, shelvesInfo }) => {
             } else {
                 setAllBooks(res);
                 setError(false);
-                console.log(allBooks);
             }
         });
     }
